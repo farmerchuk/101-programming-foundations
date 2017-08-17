@@ -3,31 +3,79 @@
 # perform the operation on the two numbers
 # output the result
 
-puts "Welcome to Calculator!"
+OPERATORS = { "+" => "Adding",
+              "-" => "Subtracting",
+              "*" => "Multiplying",
+              "/" => "Dividing" }
 
-print "Please enter a number: "
-num1 = gets.chomp.to_i
-print "Please enter a second number: "
-num2 = gets.chomp.to_i
-print "Please enter a operation (+)(-)(*)(/): "
-operator = gets.chomp
+OPERATOR_PROMPT = <<-MSG
+Please enter an operator:
+  (+) Add
+  (-) Subtract
+  (*) Multiply
+  (/) Divide
+MSG
 
-print "Calculating."
-3.times do
-  sleep 1
-  print "."
+def puts_(message)
+  puts "> #{message}"
 end
 
-case operator
-when "+" then result = num1 + num2
-when "-" then result = num1 - num2
-when "*" then result = num1 * num2
-when "/" then result = num1.to_f / num2
-else result = nil
+def print_(message)
+  print "> #{message}"
 end
 
-if result.nil?
-  abort "Sorry, but '#{operator}' is not a valid operator!"
+def valid_number(num)
+  num.to_i.to_s == num
 end
 
-puts "The answer is: #{result}"
+def get_number
+  num = ""
+  loop do
+    print_ "Please enter a number: "
+    num = gets.chomp
+    break if valid_number(num)
+    puts_ "That is not a valid number! Try again..."
+  end
+  num.to_i
+end
+
+# main program start
+
+  puts_ "Welcome to Calculator!"
+
+# main program loop start
+
+loop do
+
+  num1 = get_number
+  num2 = get_number
+
+  operator = ""
+  loop do
+    print_ OPERATOR_PROMPT
+    operator = gets.chomp
+    break if OPERATORS.has_key? operator
+    puts_ "That is not a valid operator! Try again..."
+  end
+
+  case operator
+  when "+" then result = num1 + num2
+  when "-" then result = num1 - num2
+  when "*" then result = num1 * num2
+  when "/" then result = num1.to_f / num2
+  end
+
+  print_ "#{OPERATORS[operator]} #{num1} and #{num2}"
+  3.times do
+    print "."
+    sleep 1
+  end
+
+  puts "The answer is: #{result}"
+
+  print_ "Would you like to do another calculation? (y/n): "
+  user_choice = gets.chomp
+  break if user_choice[0].downcase != "y"
+end
+
+puts_ "Thanks for using the calculator!"
