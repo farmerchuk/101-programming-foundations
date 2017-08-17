@@ -1,0 +1,12 @@
+en:
+  welcome: "Welcome to Calculator!"
+  invalid_number: "That is not a valid number! Try again..."
+  invalid_operator: "That is not a valid operator! Try again..."
+  run_again: "Would you like to do another calculation? (y/n): "
+  goodbye: "Thanks for using the calculator!"
+fr:
+  welcome: "Bienvenue dans Calculatrice!"
+  invalid_number: "Ce n'est pas un numéro valide! Réessayer..."
+  invalid_operator: "Ce n'est pas un opérateur valide! Réessayer..."
+  run_again: "Voulez-vous faire un autre calcul? (y/n): "
+  goodbye: "Merci d'utiliser la calculatrice!"

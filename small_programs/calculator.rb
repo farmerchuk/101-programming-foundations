@@ -3,6 +3,12 @@
 # perform the operation on the two numbers
 # output the result
 
+require 'yaml'
+
+MESSAGES = YAML.load_file 'calculator_messages.yml'
+
+LANGUAGE = 'fr'
+
 OPERATORS = { "+" => "Adding",
               "-" => "Subtracting",
               "*" => "Multiplying",
@@ -16,6 +22,10 @@ Please enter an operator:
   (/) Divide
 MSG
 
+def message(msg, lang='en')
+  MESSAGES[lang][msg]
+end
+
 def puts_(message)
   puts "> #{message}"
 end
@@ -25,7 +35,7 @@ def print_(message)
 end
 
 def valid_number(num)
-  num.to_i.to_s == num
+  num.to_i.to_s == num || num.to_f.to_s == num
 end
 
 def get_number
@@ -34,14 +44,14 @@ def get_number
     print_ "Please enter a number: "
     num = gets.chomp
     break if valid_number(num)
-    puts_ "That is not a valid number! Try again..."
+    puts_ message 'invalid_number', LANGUAGE
   end
-  num.to_i
+  num.to_f
 end
 
 # main program start
 
-  puts_ "Welcome to Calculator!"
+  puts_ message 'welcome', LANGUAGE
 
 # main program loop start
 
@@ -54,8 +64,8 @@ loop do
   loop do
     print_ OPERATOR_PROMPT
     operator = gets.chomp
-    break if OPERATORS.has_key? operator
-    puts_ "That is not a valid operator! Try again..."
+    break if OPERATORS.key? operator
+    puts_ message 'invalid_operator', LANGUAGE
   end
 
   case operator
@@ -73,9 +83,9 @@ loop do
 
   puts "The answer is: #{result}"
 
-  print_ "Would you like to do another calculation? (y/n): "
+  print_ message 'run_again', LANGUAGE
   user_choice = gets.chomp
   break if user_choice[0].downcase != "y"
 end
 
-puts_ "Thanks for using the calculator!"
+puts_ message 'goodbye', LANGUAGE
