@@ -13,6 +13,7 @@ def format_number(num)
 end
 
 def number?(num)
+  num.to_i > 0 &&
   num.to_i.to_s == num || num.to_f.to_s == num
 end
 
