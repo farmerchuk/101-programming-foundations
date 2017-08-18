@@ -3,7 +3,6 @@
 CHOICES = %w(rock paper scissors)
 
 # main program loop start
-
 loop do
 
   # player selects an option
@@ -32,6 +31,7 @@ loop do
     puts "Computer wins!"
   end
 
+  # ask if user would like to play agian
   puts "Would you like to play again? (y/n)"
   player_input = gets.chomp
   break if player_input.downcase[0] != "y"
