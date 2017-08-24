@@ -80,7 +80,7 @@ def create_human_players(num_of_humans, player_list)
   end
 end
 
-def create_comp_and_human_players(num_of_humans, player_list)
+def create_comp_and_human_players(player_list)
   player_list[1] = { name: get_player_name(1),
                      token: TOKENS[0],
                      ai: false, score: 0 }
@@ -93,7 +93,7 @@ def create_players(num_of_humans, player_list)
   if num_of_humans > 1
     create_human_players(num_of_humans, player_list)
   elsif num_of_humans <= 1
-    create_comp_and_human_players(num_of_humans, player_list)
+    create_comp_and_human_players(player_list)
   end
 end
 
@@ -103,7 +103,7 @@ def player_selects_square(board, player, player_list)
     sleep 1
     square = computer_selects_square(board, player_list)
   else
-    square = human_selects_square(board, player, player_list)
+    square = human_selects_square(board, player)
   end
   mark_square(board, square, player[:token])
 end
@@ -115,8 +115,8 @@ def computer_selects_square(board, player_list)
   square
 end
 
-def human_selects_square(board, player, player_list)
-square = ''
+def human_selects_square(board, player)
+  square = ''
   loop do
     print "#{player[:name]}, please choose a square: "
     square = gets.chomp.to_i
@@ -193,7 +193,7 @@ def prepare_next_round
 end
 
 def play_again?
-  input = ""
+  input = ''
   loop do
     print 'Would you like to play again? (y/n) '
     input = gets.chomp.downcase
@@ -228,7 +228,7 @@ loop do # new game loop
     else
       puts "It's a tie!"
     end
-    
+
     prepare_next_round
     round_winner = nil
     board = initialize_board
@@ -237,7 +237,7 @@ loop do # new game loop
   # finish game and set up next round if desired
   display_board(board, player_list)
   puts "#{round_winner[:name]} is the champion!"
-  break if !play_again?
+  break unless play_again?
 end
 
 puts 'Thanks for playing!'
