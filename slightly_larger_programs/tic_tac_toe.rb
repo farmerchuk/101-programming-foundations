@@ -8,12 +8,8 @@ WINNING_CONDITIONS = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] +
 def display_board(board, player_list)
   system 'clear'
   display_score(player_list)
-  player_list.count.times do |n|
-    name = player_list[n + 1][:name]
-    token = player_list[n + 1][:token]
-    puts "#{name}'s tokens are: #{token}"
-  end
-  puts
+  display_players(player_list)
+  puts # spacing
   puts '       |       |       '
   puts "   #{board[1]}   |   #{board[2]}   |   #{board[3]}   "
   puts '       |       |       '
@@ -25,7 +21,7 @@ def display_board(board, player_list)
   puts '       |       |       '
   puts "   #{board[7]}   |   #{board[8]}   |   #{board[9]}   "
   puts '       |       |       '
-  puts
+  puts # spacing
 end
 
 def display_score(player_list)
@@ -35,7 +31,15 @@ def display_score(player_list)
     puts "#{name} has #{score} points!"
   end
   puts '(First to 3 wins)'
-  puts
+  puts # spacing
+end
+
+def display_players(player_list)
+  player_list.count.times do |n|
+    name = player_list[n + 1][:name]
+    token = player_list[n + 1][:token]
+    puts "#{name}'s tokens are: #{token}"
+  end
 end
 
 def initialize_board
@@ -48,7 +52,7 @@ def mark_square(board, square, player_token)
   board[square] = player_token
 end
 
-def validate_choice(board, square)
+def validate_square_choice(board, square)
   board[square] == square
 end
 
@@ -58,6 +62,7 @@ def how_many_humans
     print 'How many players? (up to 4): '
     players = gets.chomp.to_i
     break if (1..4).cover?(players)
+    puts "Sorry, that's not a valid choice..."
   end
   players
 end
@@ -67,20 +72,29 @@ def get_player_name(count)
   gets.chomp
 end
 
-def create_players(num_of_humans)
-  player_list = {}
-  if num_of_humans > 1
-    num_of_humans.times do |n|
-      player_list[n + 1] = { name: get_player_name(n + 1), token: TOKENS[n],
-                             ai: false, score: 0 }
-    end
-  elsif num_of_humans <= 1
-    player_list[1] = { name: get_player_name(1), token: TOKENS[0],
-                       ai: false, score: 0 }
-    player_list[2] = { name: 'Computer', token: TOKENS[1],
-                       ai: true, score: 0 }
+def create_human_players(num_of_humans, player_list)
+  num_of_humans.times do |n|
+    player_list[n + 1] = { name: get_player_name(n + 1),
+                           token: TOKENS[n],
+                           ai: false, score: 0 }
   end
-  player_list
+end
+
+def create_comp_and_human_players(num_of_humans, player_list)
+  player_list[1] = { name: get_player_name(1),
+                     token: TOKENS[0],
+                     ai: false, score: 0 }
+  player_list[2] = { name: 'Computer',
+                     token: TOKENS[1],
+                     ai: true, score: 0 }
+end
+
+def create_players(num_of_humans, player_list)
+  if num_of_humans > 1
+    create_human_players(num_of_humans, player_list)
+  elsif num_of_humans <= 1
+    create_comp_and_human_players(num_of_humans, player_list)
+  end
 end
 
 def player_selects_square(board, player, player_list)
@@ -89,12 +103,7 @@ def player_selects_square(board, player, player_list)
     sleep 1
     square = computer_selects_square(board, player_list)
   else
-    loop do
-      print "#{player[:name]}, please choose a square: "
-      square = gets.chomp.to_i
-      break if validate_choice(board, square)
-      puts 'Sorry, that is not a valid option!'
-    end
+    square = human_selects_square(board, player, player_list)
   end
   mark_square(board, square, player[:token])
 end
@@ -103,6 +112,17 @@ def computer_selects_square(board, player_list)
   square = computer_selects_aggressive(board, player_list)
   square = computer_selects_defensive(board, player_list) unless square
   square = empty_squares(board, player_list).values.sample unless square
+  square
+end
+
+def human_selects_square(board, player, player_list)
+square = ''
+  loop do
+    print "#{player[:name]}, please choose a square: "
+    square = gets.chomp.to_i
+    break if validate_square_choice(board, square)
+    puts 'Sorry, that is not a valid option!'
+  end
   square
 end
 
@@ -172,20 +192,34 @@ def prepare_next_round
   end
 end
 
+def play_again?
+  input = ""
+  loop do
+    print 'Would you like to play again? (y/n) '
+    input = gets.chomp.downcase
+    break if %w(y n yes no).include?(input)
+    puts 'Sorry, that is not a valid option...'
+  end
+  %w(y yes).include?(input) ? true : false
+end
+
 loop do # new game loop
   system 'clear'
   puts 'Welcome to Tic-Tac-Toe!'
 
   num_of_humans = how_many_humans
-  player_list = create_players(num_of_humans)
-  round_winner = nil
+  player_list = {}
+  create_players(num_of_humans, player_list)
   board = initialize_board
+  round_winner = nil
 
   loop do # new round loop
-    loop do # take turns until someone wins
+    loop do # take turns until winner or tie
       break if player_turns(board, player_list)
     end
+
     display_board(board, player_list)
+
     round_winner = winning_player(board, player_list)
     if round_winner
       round_winner[:score] += 1
@@ -194,16 +228,16 @@ loop do # new game loop
     else
       puts "It's a tie!"
     end
+    
     prepare_next_round
     round_winner = nil
     board = initialize_board
   end
 
+  # finish game and set up next round if desired
   display_board(board, player_list)
   puts "#{round_winner[:name]} is the champion!"
-  print 'Would you like to play again? (y/n) '
-  input = gets.chomp.downcase
-  break if input != 'y'
+  break if !play_again?
 end
 
 puts 'Thanks for playing!'
