@@ -1,9 +1,22 @@
-# a simple game of tic-tac-toe
+# A simple game of Tic-Tac-Toe
+# 1 to 4 players (if 1 player, computer is opponent)
+# First player to win 3 rounds wins
 
-TOKENS = ['X', 'O', '@', '#']
+require 'colorize'
+
+TOKENS = ['X'.red, 'O'.green, '@'.blue, '#'.yellow].freeze
 WINNING_CONDITIONS = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] +
                      [[1, 4, 7], [2, 5, 8], [3, 6, 9]] +
-                     [[1, 5, 9], [3, 5, 7]]
+                     [[1, 5, 9], [3, 5, 7]].freeze
+
+def welcome
+  system 'clear'
+  puts 'Welcome to Tic-Tac-Toe!'
+  puts '--------------------------------------------------'
+  puts '1 to 4 players (if 1 player, computer is opponent)'
+  puts 'First player to win 3 rounds wins the game!'
+  puts # spacing
+end
 
 def display_board(board, player_list)
   system 'clear'
@@ -89,12 +102,14 @@ def create_comp_and_human_players(player_list)
                      ai: true, score: 0 }
 end
 
-def create_players(num_of_humans, player_list)
+def initialize_players(num_of_humans)
+  player_list = {}
   if num_of_humans > 1
     create_human_players(num_of_humans, player_list)
   elsif num_of_humans <= 1
     create_comp_and_human_players(player_list)
   end
+  player_list
 end
 
 def player_selects_square(board, player, player_list)
@@ -111,7 +126,7 @@ end
 def computer_selects_square(board, player_list)
   square = computer_selects_aggressive(board, player_list)
   square = computer_selects_defensive(board, player_list) unless square
-  square = empty_squares(board, player_list).values.sample unless square
+  square = empty_squares(board).values.sample unless square
   square
 end
 
@@ -163,25 +178,32 @@ def winning_player(board, player_list)
   nil
 end
 
-def players_tie?(board, player_list)
-  empty_squares(board, player_list).empty?
+def players_tie?(board)
+  empty_squares(board).empty?
 end
 
-def empty_squares(board, player_list)
-  board.select do |_, v|
-    v != player_list[1][:token] && v != player_list[2][:token]
-  end
+def empty_squares(board)
+  board.select { |_, v| v.class == Integer }
 end
 
-def player_turns(board, player_list)
-  player_list.count.times do |n|
-    display_board(board, player_list)
-    player_selects_square(board, player_list[n + 1], player_list)
-    if winning_player(board, player_list) || players_tie?(board, player_list)
-      return 1
+def player_turns(board, player_list, round_turn_order)
+  loop do
+    round_turn_order.each do |e|
+      display_board(board, player_list)
+      player_selects_square(board, player_list[e], player_list)
+      return if winning_player(board, player_list) || players_tie?(board)
     end
   end
-  nil
+end
+
+def initialize_round_turn_order(player_list)
+  round_turn_order = []
+  player_list.count.times { |n| round_turn_order << n + 1 }
+  round_turn_order
+end
+
+def increment_round_turn_order(round_turn_order)
+  round_turn_order.push(round_turn_order.shift)
 end
 
 def prepare_next_round
@@ -204,23 +226,19 @@ def play_again?
 end
 
 loop do # new game loop
-  system 'clear'
-  puts 'Welcome to Tic-Tac-Toe!'
+  welcome
 
   num_of_humans = how_many_humans
-  player_list = {}
-  create_players(num_of_humans, player_list)
+  player_list = initialize_players(num_of_humans)
   board = initialize_board
+  round_turn_order = initialize_round_turn_order(player_list)
   round_winner = nil
 
   loop do # new round loop
-    loop do # take turns until winner or tie
-      break if player_turns(board, player_list)
-    end
-
+    player_turns(board, player_list, round_turn_order)
     display_board(board, player_list)
-
     round_winner = winning_player(board, player_list)
+
     if round_winner
       round_winner[:score] += 1
       break if round_winner[:score] >= 3
@@ -230,6 +248,7 @@ loop do # new game loop
     end
 
     prepare_next_round
+    increment_round_turn_order(round_turn_order)
     round_winner = nil
     board = initialize_board
   end
