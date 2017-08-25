@@ -12,15 +12,15 @@ CARD_FACES = ['2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 '] +
 #          { suit: " CLUBS  ", value: 1, face: "A " },
 #          { suit: " SPADES ", value: 10, face: "10" } ]
 
-def render_cards(hand)
+def render_cards(hand, hide_first=false)
   card_line_0(hand)
-  card_line_1(hand)
+  card_line_1(hand, hide_first)
   card_line_2(hand)
   card_line_3(hand)
-  card_line_4(hand)
+  card_line_4(hand, hide_first)
   card_line_5(hand)
   card_line_6(hand)
-  card_line_7(hand)
+  card_line_7(hand, hide_first)
   card_line_8(hand)
 end
 
@@ -29,8 +29,15 @@ def card_line_0(hand)
   puts
 end
 
-def card_line_1(hand)
-  hand.each { |card| print "| #{card[:face]}       | " }
+def card_line_1(hand, hide_first)
+  if hide_first
+    hand.each_with_index do |card, idx|
+      print "| ??       | " if idx == 0
+      print "| #{card[:face]}       | " if idx >= 1
+    end
+  else
+    hand.each { |card| print "| #{card[:face]}       | " }
+  end
   puts
 end
 
@@ -44,8 +51,15 @@ def card_line_3(hand)
   puts
 end
 
-def card_line_4(hand)
-  hand.each { |card| print "| #{card[:suit]} | " }
+def card_line_4(hand, hide_first)
+  if hide_first
+    hand.each_with_index do |card, idx|
+      print "| ???????? | " if idx == 0
+      print "| #{card[:suit]} | " if idx >= 1
+    end
+  else
+    hand.each { |card| print "| #{card[:suit]} | " }
+  end
   puts
 end
 
@@ -59,8 +73,15 @@ def card_line_6(hand)
   puts
 end
 
-def card_line_7(hand)
-  hand.each { |card| print "|       #{card[:face]} | " }
+def card_line_7(hand, hide_first)
+  if hide_first
+    hand.each_with_index do |card, idx|
+      print "|       ?? | " if idx == 0
+      print "|       #{card[:face]} | " if idx >= 1
+    end
+  else
+    hand.each { |card| print "|       #{card[:face]} | " }
+  end
   puts
 end
 
@@ -72,7 +93,7 @@ end
 def display_table(players, dealer)
   system 'clear'
   puts "Dealer's Hand"
-  render_cards(dealer[:hand])
+  render_cards(dealer[:hand], true)
   players.each do |player|
     puts # spacing
     puts "#{player[:name]}'s Hand"
