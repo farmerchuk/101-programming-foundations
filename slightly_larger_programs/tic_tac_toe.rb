@@ -2,8 +2,6 @@
 # 1 to 4 players (if 1 player, computer is opponent)
 # First player to win 3 rounds wins
 
-require 'pry'
-
 TOKENS = ['X', 'O', '@', '#'].freeze
 WINNING_CONDITIONS = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] +
                      [[1, 4, 7], [2, 5, 8], [3, 6, 9]] +
@@ -48,9 +46,9 @@ end
 # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
 def display_score(player_list)
-  player_list.count.times do |n|
-    name = player_list[n + 1][:name]
-    score = player_list[n + 1][:score]
+  player_list.each do |player|
+    name = player[:name]
+    score = player[:score]
     puts "#{name} has #{score} points!"
   end
   puts '(First to 3 wins)'
@@ -58,9 +56,9 @@ def display_score(player_list)
 end
 
 def display_players(player_list)
-  player_list.count.times do |n|
-    name = player_list[n + 1][:name]
-    token = player_list[n + 1][:token]
+  player_list.each do |player|
+    name = player[:name]
+    token = player[:token]
     puts "#{name}'s tokens are: #{token}"
   end
 end
@@ -69,14 +67,6 @@ def initialize_board
   board = {}
   9.times { |n| board[n + 1] = (n + 1) }
   board
-end
-
-def mark_square(board, square, player_token)
-  board[square] = player_token
-end
-
-def validate_square_choice(board, square)
-  board[square] == square
 end
 
 def how_many_humans
@@ -104,23 +94,23 @@ end
 
 def create_human_players(num_of_humans, player_list)
   num_of_humans.times do |n|
-    player_list[n + 1] = { name: get_player_name(n + 1),
-                           token: TOKENS[n],
-                           ai: false, score: 0 }
+    player_list << { name: get_player_name(n + 1),
+                     token: TOKENS[n],
+                     ai: false, score: 0 }
   end
 end
 
 def create_comp_and_human_players(player_list)
-  player_list[1] = { name: get_player_name(1),
-                     token: TOKENS[0],
-                     ai: false, score: 0 }
-  player_list[2] = { name: 'Computer',
-                     token: TOKENS[1],
-                     ai: true, score: 0 }
+  player_list << { name: get_player_name(1),
+                   token: TOKENS[0],
+                   ai: false, score: 0 }
+  player_list << { name: 'Computer',
+                   token: TOKENS[1],
+                   ai: true, score: 0 }
 end
 
 def initialize_players(num_of_humans)
-  player_list = {}
+  player_list = []
   if num_of_humans > 1
     create_human_players(num_of_humans, player_list)
   elsif num_of_humans <= 1
@@ -143,6 +133,7 @@ end
 def computer_selects_square(board, player_list)
   square = computer_selects_aggressive(board, player_list)
   square = computer_selects_defensive(board, player_list) unless square
+  square = computer_selects_5_square(board) unless square
   square = empty_squares(board).values.sample unless square
   square
 end
@@ -159,11 +150,32 @@ def human_selects_square(board, player)
 end
 
 def computer_selects_aggressive(board, player_list)
-  check_line(board, player_list[2])
+  check_line(board, player_list[1])
 end
 
 def computer_selects_defensive(board, player_list)
-  check_line(board, player_list[1])
+  check_line(board, player_list[0])
+end
+
+def computer_selects_5_square(board)
+  return 5 if square_empty?(board, 5)
+  nil
+end
+
+def square_empty?(board, square)
+  (1..9).cover?(board[square])
+end
+
+def empty_squares(board)
+  board.select { |_, square_value| square_empty?(board, square_value) }
+end
+
+def mark_square(board, square, player_token)
+  board[square] = player_token
+end
+
+def validate_square_choice(board, square)
+  board[square] == square
 end
 
 def check_line(board, player)
@@ -182,11 +194,9 @@ def winning_line?(board, line, player)
 end
 
 def winning_player(board, player_list)
-  player_list.count.times do |n|
+  player_list.each do |player|
     WINNING_CONDITIONS.each do |line|
-      if winning_line?(board, line, player_list[n + 1])
-        return player_list[n + 1]
-      end
+      return player if winning_line?(board, line, player)
     end
   end
   nil
@@ -194,14 +204,6 @@ end
 
 def players_tie?(board)
   empty_squares(board).empty?
-end
-
-def square_empty?(board, square)
-  (1..9).cover?(board[square])
-end
-
-def empty_squares(board)
-  board.select { |_, square_value| square_empty?(board, square_value) }
 end
 
 def player_turns(board, player_list, player_turn_order)
@@ -217,7 +219,7 @@ end
 
 def initialize_player_turn_order(player_list)
   player_turn_order = []
-  player_list.count.times { |n| player_turn_order << n + 1 }
+  player_list.count.times { |n| player_turn_order << n }
   player_turn_order
 end
 
