@@ -2,27 +2,36 @@
 # 1 to 4 players (if 1 player, computer is opponent)
 # First player to win 3 rounds wins
 
-require 'colorize'
+require 'pry'
 
-TOKENS = ['X'.red, 'O'.green, '@'.blue, '#'.yellow].freeze
+TOKENS = ['X', 'O', '@', '#'].freeze
 WINNING_CONDITIONS = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] +
                      [[1, 4, 7], [2, 5, 8], [3, 6, 9]] +
                      [[1, 5, 9], [3, 5, 7]].freeze
 
-def welcome
+def clear_screen
   system 'clear'
+end
+
+def welcome
+  clear_screen
   puts 'Welcome to Tic-Tac-Toe!'
   puts '--------------------------------------------------'
   puts '1 to 4 players (if 1 player, computer is opponent)'
   puts 'First player to win 3 rounds wins the game!'
-  puts # spacing
+  puts
 end
 
 def display_board(board, player_list)
-  system 'clear'
+  clear_screen
   display_score(player_list)
   display_players(player_list)
-  puts # spacing
+  display_current_board(board)
+end
+
+# rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+def display_current_board(board)
+  puts
   puts '       |       |       '
   puts "   #{board[1]}   |   #{board[2]}   |   #{board[3]}   "
   puts '       |       |       '
@@ -34,8 +43,9 @@ def display_board(board, player_list)
   puts '       |       |       '
   puts "   #{board[7]}   |   #{board[8]}   |   #{board[9]}   "
   puts '       |       |       '
-  puts # spacing
+  puts
 end
+# rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
 def display_score(player_list)
   player_list.count.times do |n|
@@ -81,8 +91,15 @@ def how_many_humans
 end
 
 def get_player_name(count)
-  print "What is player #{count}'s name? "
-  gets.chomp
+  name = ''
+  loop do
+    print "What is player #{count}'s name? "
+    name = gets.chomp
+    break if name.size >= 3 && !name.include?(' ')
+    puts 'Sorry, please enter a name with'
+    puts 'at least 3 characters and no spaces...'
+  end
+  name
 end
 
 def create_human_players(num_of_humans, player_list)
@@ -142,22 +159,19 @@ def human_selects_square(board, player)
 end
 
 def computer_selects_aggressive(board, player_list)
-  WINNING_CONDITIONS.each do |line|
-    matches_comp = line.count { |sqr| board[sqr] == player_list[2][:token] }
-    open_sqrs = line.select { |sqr| board[sqr].class == Integer }.size
-    if matches_comp == 2 && open_sqrs == 1
-      return line.select { |sqr| board[sqr].class == Integer }[0]
-    end
-  end
-  nil
+  check_line(board, player_list[2])
 end
 
 def computer_selects_defensive(board, player_list)
+  check_line(board, player_list[1])
+end
+
+def check_line(board, player)
   WINNING_CONDITIONS.each do |line|
-    matches_human = line.count { |sqr| board[sqr] == player_list[1][:token] }
-    open_sqrs = line.select { |sqr| board[sqr].class == Integer }.size
-    if matches_human == 2 && open_sqrs == 1
-      return line.select { |sqr| board[sqr].class == Integer }[0]
+    line_matches = line.count { |sqr| board[sqr] == player[:token] }
+    open_sqrs = line.select { |sqr| square_empty?(board, sqr) }.size
+    if line_matches == 2 && open_sqrs == 1
+      return line.select { |sqr| square_empty?(board, sqr) }[0]
     end
   end
   nil
@@ -182,28 +196,33 @@ def players_tie?(board)
   empty_squares(board).empty?
 end
 
-def empty_squares(board)
-  board.select { |_, v| v.class == Integer }
+def square_empty?(board, square)
+  (1..9).cover?(board[square])
 end
 
-def player_turns(board, player_list, round_turn_order)
+def empty_squares(board)
+  board.select { |_, square_value| square_empty?(board, square_value) }
+end
+
+def player_turns(board, player_list, player_turn_order)
   loop do
-    round_turn_order.each do |e|
+    player_turn_order.each do |player|
       display_board(board, player_list)
-      player_selects_square(board, player_list[e], player_list)
-      return if winning_player(board, player_list) || players_tie?(board)
+      player_selects_square(board, player_list[player], player_list)
+      break if winning_player(board, player_list) || players_tie?(board)
     end
+    break if winning_player(board, player_list) || players_tie?(board)
   end
 end
 
-def initialize_round_turn_order(player_list)
-  round_turn_order = []
-  player_list.count.times { |n| round_turn_order << n + 1 }
-  round_turn_order
+def initialize_player_turn_order(player_list)
+  player_turn_order = []
+  player_list.count.times { |n| player_turn_order << n + 1 }
+  player_turn_order
 end
 
-def increment_round_turn_order(round_turn_order)
-  round_turn_order.push(round_turn_order.shift)
+def increment_player_turn_order(player_turn_order)
+  player_turn_order.push(player_turn_order.shift)
 end
 
 def prepare_next_round
@@ -231,11 +250,11 @@ loop do # new game loop
   num_of_humans = how_many_humans
   player_list = initialize_players(num_of_humans)
   board = initialize_board
-  round_turn_order = initialize_round_turn_order(player_list)
+  player_turn_order = initialize_player_turn_order(player_list)
   round_winner = nil
 
   loop do # new round loop
-    player_turns(board, player_list, round_turn_order)
+    player_turns(board, player_list, player_turn_order)
     display_board(board, player_list)
     round_winner = winning_player(board, player_list)
 
@@ -248,7 +267,7 @@ loop do # new game loop
     end
 
     prepare_next_round
-    increment_round_turn_order(round_turn_order)
+    increment_player_turn_order(player_turn_order)
     round_winner = nil
     board = initialize_board
   end
