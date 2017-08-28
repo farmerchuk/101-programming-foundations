@@ -3,9 +3,9 @@ require 'pry'
 CARD_SUITS = [' HEARTS ', 'DIAMONDS', ' CLUBS  ', ' SPADES '].freeze
 CARD_FACES = ['2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 '] +
              ['10', 'J ', 'Q ', 'K ', 'A '].freeze
-ACE = 'A'.freeze
+ACE = 'A '.freeze
 
-# card rendering methods =======================================================
+# display methods ==============================================================
 
 # render_cards method accepts an array of hash cards
 # hand = [ { suit: " HEARTS ", value: 2, face: "2 " },
@@ -92,7 +92,7 @@ def card_line_8(hand)
 end
 
 def display_table(players, dealer)
-  system 'clear'
+  clear_screen
   puts "Dealer's Hand"
   render_cards(dealer[:hand], true)
   players.each do |player|
@@ -102,21 +102,60 @@ def display_table(players, dealer)
   end
 end
 
-# game methods =================================================================
-
 def clear_screen
   system 'clear'
 end
 
+def hold(message)
+  puts message
+  sleep(3)
+end
+
 def welcome
+  clear_screen
   puts 'Welcome to 21!'
   puts '--------------'
   puts 'A game for up to 4 players against the dealer.'
   puts
 end
 
-def initialize_deck
-  num_of_decks = ask_num_of_decks
+def display_winners(players, dealer)
+  player_winners = names_of_players_with_21(players)
+  if any_player_has_21?(players) && dealer_has_21?(dealer)
+    puts "#{player_winners} tied with the dealer!"
+  elsif any_player_has_21?(players) && !dealer_has_21?(dealer)
+    puts "#{player_winners} beat the dealer!"
+  else
+    puts 'Nobody won...'
+  end
+end
+
+def names_of_players_with_21(players)
+  winners = ''
+  players_with_21(players).each do |player|
+    winners << if winners.size.zero?
+                 player[:name]
+               else
+                 " and #{player[:name]}"
+               end
+  end
+  winners
+end
+
+def play_again?
+  choice = false
+  loop do
+    print 'Would you like to play another round? (y/n): '
+    choice = gets.chomp.downcase
+    break if %w(y yes n no).include?(choice)
+    puts 'Sorry, that is not a valid option...'
+  end
+  %w(y yes).include?(choice) ? true : false
+end
+
+# game methods =================================================================
+
+def initialize_deck(num_of_decks)
   deck = build_deck(num_of_decks)
   shuffle_deck(deck)
 end
@@ -138,7 +177,7 @@ def build_deck(num_of_decks)
     CARD_FACES.each do |face|
       value = 10 if face.to_i.zero?
       value = face.to_i if (2..10).cover?(face.to_i)
-      value = 11 if face.rstrip == ACE
+      value = 11 if face == ACE
       deck << { suit: suit, value: value, face: face }
     end
   end
@@ -150,9 +189,8 @@ def shuffle_deck(deck)
   deck
 end
 
-def initialize_players
+def initialize_players(num_of_players)
   players = []
-  num_of_players = ask_num_of_players
   num_of_players.times { |n| players << create_player(n + 1) }
   players
 end
@@ -230,24 +268,65 @@ def busted?(hand)
   hand_value(hand) > 21
 end
 
-def player_hits_or_stays
-  choice = ''
+def any_player_has_21?(players)
+  return true if players.any? { |player| equals_21?(player[:hand]) }
+  false
+end
+
+def players_with_21(players)
+  players.select { |player| equals_21?(player[:hand]) }
+end
+
+def dealer_has_21?(dealer)
+  equals_21?(dealer[:hand])
+end
+
+def player_turns(deck, players, dealer)
+  players.each { |player| player_turn(deck, players, player, dealer) }
+end
+
+def player_turn(deck, players, player, dealer)
+  while player_hits?(player)
+    deal_card(deck, player)
+    display_table(players, dealer)
+    if busted?(player[:hand])
+      hold('Sorry, you busted!')
+      break
+    end
+  end
+end
+
+def player_hits?(player)
+  choice = false
   loop do
-    print 'Would you like to hit or stay? '
+    print "#{player[:name]}, would you like to hit or stay? "
     choice = gets.chomp.downcase
     break if %w(hit stay).include?(choice)
     puts 'Sorry, that is not a valid option...'
   end
-  choice.to_s
+  choice == 'hit' ? true : false
 end
 
-# game loop
+loop do # main game loop
+  welcome
+  num_of_players = ask_num_of_players
+  players = initialize_players(num_of_players)
+  dealer = initialize_dealer
+  num_of_decks = ask_num_of_decks
 
-welcome
+  loop do # single round loop
+    deck = initialize_deck(num_of_decks)
+    deal_first_hand(deck, players, dealer)
+    display_table(players, dealer)
 
-players = initialize_players
-dealer = initialize_dealer
-deck = initialize_deck
+    break if any_player_has_21?(players)
 
-deal_first_hand(deck, players, dealer)
-display_table(players, dealer)
+    player_turns(deck, players, dealer)
+    # dealer_turn(dealer)
+
+    break
+  end
+
+  display_winners(players, dealer)
+  break unless play_again?
+end
