@@ -121,7 +121,6 @@ def welcome
 end
 
 def display_winners(players, dealer)
-  display_table(players, dealer, false)
   if all_players_busted?(players)
     puts 'All players busted. Dealer wins!'
   elsif dealer_has_best_hand?(players, dealer)
@@ -147,6 +146,7 @@ def dealer_result(players, dealer)
   "Dealer #{result} with #{hand_value(dealer[:hand])}"
 end
 
+# rubocop:disable Metrics/MethodLength
 def player_result(player, dealer)
   player_hand_value = hand_value(player[:hand])
   dealer_hand_value = hand_value(dealer[:hand])
@@ -161,6 +161,7 @@ def player_result(player, dealer)
   end
   "#{player[:name]} #{result} with #{player_hand_value}"
 end
+# rubocop:enable Metrics/MethodLength
 
 def play_again?
   choice = ''
@@ -302,24 +303,11 @@ def dealer_busted?(dealer)
   busted?(dealer[:hand])
 end
 
-def any_player_has_21?(players)
-  return true if players.any? { |player| equals_21?(player[:hand]) }
-  false
-end
-
 def players_who_beat_dealer(players, dealer)
   not_busted = players.select { |player| !busted?(player[:hand]) }
   not_busted.select do |player|
     hand_value(player[:hand]) > hand_value(dealer[:hand])
   end
-end
-
-def players_with_21(players)
-  players.select { |player| equals_21?(player[:hand]) }
-end
-
-def dealer_has_21?(dealer)
-  equals_21?(dealer[:hand])
 end
 
 def dealer_has_best_hand?(players, dealer)
@@ -412,6 +400,7 @@ loop do
   display_table(players, dealer)
   player_turns(deck, players, dealer)
   dealer_turn(deck, players, dealer)
+  display_table(players, dealer, false)
   display_winners(players, dealer)
   break unless new_round?(players, dealer)
 end
