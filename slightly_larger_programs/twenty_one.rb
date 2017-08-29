@@ -4,6 +4,8 @@ CARD_SUITS = [' HEARTS ', 'DIAMONDS', ' CLUBS  ', ' SPADES '].freeze
 CARD_FACES = ['2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 '] +
              ['10', 'J ', 'Q ', 'K ', 'A '].freeze
 ACE = 'A '.freeze
+MAX_SCORE = 21
+DEALER_STAY = 17
 
 # display methods ==============================================================
 
@@ -272,7 +274,7 @@ def hand_value(hand)
 end
 
 def adjust_value_for_aces(hand_value, aces)
-  if hand_value > 21 && aces > 0
+  if hand_value > MAX_SCORE && aces > 0
     adjust_value_for_aces(hand_value - 10, aces - 1)
   else
     hand_value
@@ -284,15 +286,15 @@ def num_aces_in_hand(hand)
 end
 
 def equals_21?(hand)
-  hand_value(hand) == 21
+  hand_value(hand) == MAX_SCORE
 end
 
 def less_than_17?(hand)
-  hand_value(hand) < 17
+  hand_value(hand) < DEALER_STAY
 end
 
 def busted?(hand)
-  hand_value(hand) > 21
+  hand_value(hand) > MAX_SCORE
 end
 
 def all_players_busted?(players)
