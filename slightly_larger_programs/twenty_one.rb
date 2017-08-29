@@ -13,7 +13,7 @@ ACE = 'A '.freeze
 #          { suit: " CLUBS  ", value: 1, face: "A " },
 #          { suit: " SPADES ", value: 10, face: "10" } ]
 
-def render_cards(hand, hide_first = false)
+def render_cards(hand, hide_first)
   card_line_0(hand)
   card_line_1(hand, hide_first)
   card_line_2(hand)
@@ -91,15 +91,16 @@ def card_line_8(hand)
   puts
 end
 
-def display_table(players, dealer)
+def display_table(players, dealer, hide_first = true)
   clear_screen
   puts "Dealer's Hand"
-  render_cards(dealer[:hand], true)
+  render_cards(dealer[:hand], hide_first)
   players.each do |player|
     puts
     puts "#{player[:name]}'s Hand"
-    render_cards(player[:hand])
+    render_cards(player[:hand], false)
   end
+  puts
 end
 
 def clear_screen
@@ -120,37 +121,62 @@ def welcome
 end
 
 def display_winners(players, dealer)
-  player_winners = names_of_players_with_21(players)
-  if any_player_has_21?(players) && dealer_has_21?(dealer)
-    puts "#{player_winners} tied with the dealer!"
-  elsif any_player_has_21?(players) && !dealer_has_21?(dealer)
-    puts "#{player_winners} beat the dealer!"
+  display_table(players, dealer, false)
+  if all_players_busted?(players)
+    puts 'All players busted. Dealer wins!'
+  elsif dealer_has_best_hand?(players, dealer)
+    puts "Dealer beats everyone with #{hand_value(dealer[:hand])}!"
   else
-    puts 'Nobody won...'
+    puts dealer_result(players, dealer)
+    players.each do |player|
+      puts player_result(player, dealer)
+    end
   end
 end
 
-def names_of_players_with_21(players)
-  winners = ''
-  players_with_21(players).each do |player|
-    winners << if winners.size.zero?
-                 player[:name]
-               else
-                 " and #{player[:name]}"
-               end
+def dealer_result(players, dealer)
+  result = 'loses'
+  if busted?(dealer[:hand])
+    result = 'busts'
+  elsif dealer_has_best_hand?(players, dealer)
+    result = 'wins'
+  elsif dealer_ties_any_player?(players, dealer) &&
+        players_who_beat_dealer(players, dealer).empty?
+    result = 'ties'
   end
-  winners
+  "Dealer #{result} with #{hand_value(dealer[:hand])}"
+end
+
+def player_result(player, dealer)
+  player_hand_value = hand_value(player[:hand])
+  dealer_hand_value = hand_value(dealer[:hand])
+  if busted?(player[:hand])
+    result = 'busts'
+  elsif player_hand_value > dealer_hand_value || busted?(dealer[:hand])
+    result = 'wins against the dealer'
+  elsif player_hand_value < dealer_hand_value
+    result = 'loses against the dealer'
+  elsif player_hand_value == dealer_hand_value
+    result = 'ties the dealer'
+  end
+  "#{player[:name]} #{result} with #{player_hand_value}"
 end
 
 def play_again?
-  choice = false
+  choice = ''
   loop do
     print 'Would you like to play another round? (y/n): '
     choice = gets.chomp.downcase
     break if %w(y yes n no).include?(choice)
     puts 'Sorry, that is not a valid option...'
   end
-  %w(y yes).include?(choice) ? true : false
+  return true if %w(y yes).include?(choice)
+  false
+end
+
+def game_over
+  puts
+  puts 'Thank you for playing 21!'
 end
 
 # game methods =================================================================
@@ -260,7 +286,7 @@ def equals_21?(hand)
   hand_value(hand) == 21
 end
 
-def less_than_17(hand)
+def less_than_17?(hand)
   hand_value(hand) < 17
 end
 
@@ -268,9 +294,24 @@ def busted?(hand)
   hand_value(hand) > 21
 end
 
+def all_players_busted?(players)
+  return true if players.all? { |player| busted?(player[:hand]) }
+end
+
+def dealer_busted?(dealer)
+  busted?(dealer[:hand])
+end
+
 def any_player_has_21?(players)
   return true if players.any? { |player| equals_21?(player[:hand]) }
   false
+end
+
+def players_who_beat_dealer(players, dealer)
+  not_busted = players.select { |player| !busted?(player[:hand]) }
+  not_busted.select do |player|
+    hand_value(player[:hand]) > hand_value(dealer[:hand])
+  end
 end
 
 def players_with_21(players)
@@ -281,8 +322,29 @@ def dealer_has_21?(dealer)
   equals_21?(dealer[:hand])
 end
 
+def dealer_has_best_hand?(players, dealer)
+  return false if busted?(dealer[:hand])
+  player = player_with_best_hand(players)
+  hand_value(dealer[:hand]) > hand_value(player[:hand])
+end
+
+def dealer_ties_any_player?(players, dealer)
+  return false if dealer_busted?(dealer)
+  players.any? do |player|
+    hand_value(player[:hand]) == hand_value(dealer[:hand])
+  end
+end
+
+def player_with_best_hand(players)
+  players_not_busted = players.select { |player| !busted?(player[:hand]) }
+  players_not_busted.sort_by { |player| hand_value(player[:hand]) }.last
+end
+
 def player_turns(deck, players, dealer)
-  players.each { |player| player_turn(deck, players, player, dealer) }
+  players.each do |player|
+    display_table(players, dealer)
+    player_turn(deck, players, player, dealer)
+  end
 end
 
 def player_turn(deck, players, player, dealer)
@@ -290,7 +352,7 @@ def player_turn(deck, players, player, dealer)
     deal_card(deck, player)
     display_table(players, dealer)
     if busted?(player[:hand])
-      hold('Sorry, you busted!')
+      hold("Sorry #{player[:name]}, you busted!")
       break
     end
   end
@@ -307,26 +369,51 @@ def player_hits?(player)
   choice == 'hit' ? true : false
 end
 
-loop do # main game loop
-  welcome
-  num_of_players = ask_num_of_players
-  players = initialize_players(num_of_players)
-  dealer = initialize_dealer
-  num_of_decks = ask_num_of_decks
-
-  loop do # single round loop
-    deck = initialize_deck(num_of_decks)
-    deal_first_hand(deck, players, dealer)
+def dealer_turn(deck, players, dealer)
+  while less_than_17?(dealer[:hand])
     display_table(players, dealer)
-
-    break if any_player_has_21?(players)
-
-    player_turns(deck, players, dealer)
-    # dealer_turn(dealer)
-
-    break
+    hold('Dealer is drawing cards...')
+    deal_card(deck, dealer)
   end
-
-  display_winners(players, dealer)
-  break unless play_again?
 end
+
+def new_round?(players, dealer)
+  puts
+  choice = false
+  if play_again?
+    clear_screen
+    reset_dealer_hand(dealer)
+    reset_player_hands(players)
+    choice = true
+  end
+  choice
+end
+
+def reset_player_hands(players)
+  players.each { |player| player[:hand] = [] }
+end
+
+def reset_dealer_hand(dealer)
+  dealer[:hand] = []
+end
+
+# run game =====================================================================
+
+welcome
+num_of_players = ask_num_of_players
+players = initialize_players(num_of_players)
+num_of_decks = ask_num_of_decks
+deck = initialize_deck(num_of_decks)
+dealer = initialize_dealer
+
+loop do
+  deck = initialize_deck(num_of_decks)
+  deal_first_hand(deck, players, dealer)
+  display_table(players, dealer)
+  player_turns(deck, players, dealer)
+  dealer_turn(deck, players, dealer)
+  display_winners(players, dealer)
+  break unless new_round?(players, dealer)
+end
+
+game_over
