@@ -1,19 +1,9 @@
-require 'pry'
-
 CARD_SUITS = [' HEARTS ', 'DIAMONDS', ' CLUBS  ', ' SPADES '].freeze
 CARD_FACES = ['2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 '] +
              ['10', 'J ', 'Q ', 'K ', 'A '].freeze
 ACE = 'A '.freeze
 MAX_SCORE = 21
 DEALER_STAY = 17
-
-# display methods ==============================================================
-
-# render_cards method accepts an array of hash cards
-# hand = [ { suit: " HEARTS ", value: 2, face: "2 " },
-#          { suit: "DIAMONDS", value: 10, face: "K "},
-#          { suit: " CLUBS  ", value: 1, face: "A " },
-#          { suit: " SPADES ", value: 10, face: "10" } ]
 
 def render_cards(hand, hide_first)
   card_line_0(hand)
@@ -117,15 +107,16 @@ end
 def welcome
   clear_screen
   puts 'Welcome to 21!'
-  puts '--------------'
-  puts 'A game for up to 4 players against the dealer.'
+  puts '------------------------------------------------------'
+  puts 'A card game for up to 4 players against the dealer.'
+  puts '(Suggested screen size of 62 lines for 3 or 4 players)'
   puts
 end
 
 def display_winners(players, dealer)
-  if all_players_busted?(players)
+  if all_players_busted?(players) && players.size > 1
     puts 'All players busted. Dealer wins!'
-  elsif dealer_has_best_hand?(players, dealer)
+  elsif dealer_has_best_hand?(players, dealer) && players.size > 1
     puts "Dealer beats everyone with #{hand_value(dealer[:hand])}!"
   else
     puts dealer_result(players, dealer)
@@ -139,7 +130,7 @@ def dealer_result(players, dealer)
   result = 'loses'
   if busted?(dealer[:hand])
     result = 'busts'
-  elsif dealer_has_best_hand?(players, dealer)
+  elsif all_players_busted?(players) || dealer_has_best_hand?(players, dealer)
     result = 'wins'
   elsif dealer_ties_any_player?(players, dealer) &&
         players_who_beat_dealer(players, dealer).empty?
@@ -181,8 +172,6 @@ def game_over
   puts
   puts 'Thank you for playing 21!'
 end
-
-# game methods =================================================================
 
 def initialize_deck(num_of_decks)
   deck = build_deck(num_of_decks)
@@ -314,6 +303,7 @@ end
 
 def dealer_has_best_hand?(players, dealer)
   return false if busted?(dealer[:hand])
+  return true if all_players_busted?(players)
   player = player_with_best_hand(players)
   hand_value(dealer[:hand]) > hand_value(player[:hand])
 end
@@ -332,8 +322,8 @@ end
 
 def player_turns(deck, players, dealer)
   players.each do |player|
-    display_table(players, dealer)
     player_turn(deck, players, player, dealer)
+    display_table(players, dealer)
   end
 end
 
@@ -360,7 +350,7 @@ def player_hits?(player)
 end
 
 def dealer_turn(deck, players, dealer)
-  while less_than_17?(dealer[:hand])
+  while less_than_17?(dealer[:hand]) && !all_players_busted?(players)
     display_table(players, dealer)
     hold('Dealer is drawing cards...')
     deal_card(deck, dealer)
@@ -386,8 +376,6 @@ end
 def reset_dealer_hand(dealer)
   dealer[:hand] = []
 end
-
-# run game =====================================================================
 
 welcome
 num_of_players = ask_num_of_players
