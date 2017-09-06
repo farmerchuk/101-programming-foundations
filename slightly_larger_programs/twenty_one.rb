@@ -181,14 +181,14 @@ def initialize_deck(num_of_decks)
 end
 
 def ask_num_of_decks
-  num_of_decks = 0
+  num_of_decks = ''
   loop do
     print 'How many decks would you like to play with? (4 maximum): '
-    num_of_decks = gets.chomp.to_i
-    break if (1..4).cover?(num_of_decks)
+    num_of_decks = gets.chomp
+    break if %w(1 2 3 4).include?(num_of_decks)
     puts 'Sorry, that is not a valid option...'
   end
-  num_of_decks
+  num_of_decks.to_i
 end
 
 def build_deck(num_of_decks)
@@ -216,14 +216,14 @@ def initialize_players(num_of_players)
 end
 
 def ask_num_of_players
-  num_of_players = 0
+  num_of_players = ''
   loop do
     print 'How many players? (4 maximum): '
-    num_of_players = gets.chomp.to_i
-    break if (1..4).cover?(num_of_players)
+    num_of_players = gets.chomp
+    break if %w(1 2 3 4).include?(num_of_players)
     puts 'Sorry, that is not a valid option...'
   end
-  num_of_players
+  num_of_players.to_i
 end
 
 def create_player(player_position)
