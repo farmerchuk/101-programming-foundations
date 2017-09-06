@@ -113,6 +113,7 @@ def welcome
   puts
 end
 
+# rubocop:disable Metrics/AbcSize
 def display_winners(players, dealer)
   if all_players_busted?(players) && players.size > 1
     puts 'All players busted. Dealer wins!'
@@ -125,6 +126,7 @@ def display_winners(players, dealer)
     end
   end
 end
+# rubocop:enable Metrics/AbcSize
 
 def dealer_result(players, dealer)
   result = 'loses'
