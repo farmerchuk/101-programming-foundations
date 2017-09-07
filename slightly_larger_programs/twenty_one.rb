@@ -113,7 +113,6 @@ def welcome
   puts
 end
 
-# rubocop:disable Metrics/AbcSize
 def display_winners(players, dealer)
   if all_players_busted?(players) && players.size > 1
     puts 'All players busted. Dealer wins!'
@@ -126,7 +125,6 @@ def display_winners(players, dealer)
     end
   end
 end
-# rubocop:enable Metrics/AbcSize
 
 def dealer_result(players, dealer)
   result = 'loses'
@@ -141,7 +139,6 @@ def dealer_result(players, dealer)
   "Dealer #{result} with #{hand_value(dealer[:hand])}"
 end
 
-# rubocop:disable Metrics/MethodLength
 def player_result(player, dealer)
   player_hand_value = hand_value(player[:hand])
   dealer_hand_value = hand_value(dealer[:hand])
@@ -156,17 +153,16 @@ def player_result(player, dealer)
   end
   "#{player[:name]} #{result} with #{player_hand_value}"
 end
-# rubocop:enable Metrics/MethodLength
 
 def play_again?
   choice = ''
   loop do
     print 'Would you like to play another round? (y/n): '
     choice = gets.chomp.downcase
-    break if %w(y yes n no).include?(choice)
+    break if %w[y yes n no].include?(choice)
     puts 'Sorry, that is not a valid option...'
   end
-  return true if %w(y yes).include?(choice)
+  return true if %w[y yes].include?(choice)
   false
 end
 
@@ -185,7 +181,7 @@ def ask_num_of_decks
   loop do
     print 'How many decks would you like to play with? (4 maximum): '
     num_of_decks = gets.chomp
-    break if %w(1 2 3 4).include?(num_of_decks)
+    break if %w[1 2 3 4].include?(num_of_decks)
     puts 'Sorry, that is not a valid option...'
   end
   num_of_decks.to_i
@@ -220,7 +216,7 @@ def ask_num_of_players
   loop do
     print 'How many players? (4 maximum): '
     num_of_players = gets.chomp
-    break if %w(1 2 3 4).include?(num_of_players)
+    break if %w[1 2 3 4].include?(num_of_players)
     puts 'Sorry, that is not a valid option...'
   end
   num_of_players.to_i
@@ -345,7 +341,7 @@ def player_hits?(player)
   loop do
     print "#{player[:name]}, would you like to hit or stay? "
     choice = gets.chomp.downcase
-    break if %w(hit stay).include?(choice)
+    break if %w[hit stay].include?(choice)
     puts 'Sorry, that is not a valid option...'
   end
   choice == 'hit' ? true : false
